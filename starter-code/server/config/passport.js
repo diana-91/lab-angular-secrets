@@ -24,4 +24,27 @@ module.exports = (passport) => {
       cb(null, user);
     });
   });
-}
+
+  passport.use('local-auth', new LocalStrategy({
+    usernameField: 'username',
+    passwordField: 'password'
+  }, (email, password, next) => {
+    User.findOne({ email: email })
+      .then(user => {
+        if (!user) {
+          next(null, user, { password: 'Invalid username or password' });
+        } else {
+          user.checkPassword(password)
+            .then(match => {
+              if (match) {
+                next(null, user);
+              } else {
+                next(null, null, { password: 'Invalid username or password' });
+              }
+            })
+            .catch(error => next(error));
+        }
+      })
+      .catch(error => next(error));
+  }));
+};
